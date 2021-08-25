@@ -1,0 +1,7 @@
+create view vw_proposal as
+select a.*,b.tel,b.okpo,b.regsvid,b.nazv,b.addr,b.reg,
+b.date_reg,b.person,b.email,b.adres_post,c.status as nazv_status
+from proposal a
+left join klient b on a.inn = b.inn and a.id_unique = b.id_unique
+left join spr_status c on a.status = c.id
+

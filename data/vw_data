@@ -1,0 +1,7 @@
+create view vw_data as
+select a.*,b.nazv,c.voltage as U_rab ,d.vid_e as energy,e.locate
+from data_non_std a
+ join spr_res b on a.rem=b.id
+ join spr_voltage c on a.voltage=c.id
+ join spr_vid d on a.vid_e=d.id
+ join spr_locate e on a.town=e.id
