@@ -21,13 +21,14 @@ class Info extends Model
     public $style1;            // Стиль оформления 1
     public $style2;            // Стиль оформления 2
     public $style_title;            // Стиль оформления заголовка
+    public $year;
 
 
     public function rules()
     {
         return [
             [['title', 'info1', 'info2','style1','style2',
-            'info3','tag','style','style_title'], 'safe'],
+            'info3','tag','style','style_title','year'], 'safe'],
         ];
     }
 }

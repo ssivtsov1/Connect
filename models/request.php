@@ -12,7 +12,6 @@ class Request extends \yii\db\ActiveRecord
     public $edrpo;
     public $inn;
     public $nazv;
-    public $tel;
     public $email;
     public $adres1;
     public $adres_con;
@@ -21,6 +20,7 @@ class Request extends \yii\db\ActiveRecord
     public $doc3;
     public $doc4;
     public $doc5;
+    public $year;
 
    
     public static function tableName()
@@ -35,11 +35,12 @@ class Request extends \yii\db\ActiveRecord
             'id_tu' => 'Ідентифікатор ТУ:',
             'inn' => 'ІНН:',
             'edrpo' => 'ЕДРПОУ:',
-            'tel' => 'Телефон:',
+            'tel_con' => 'Телефон:',
             'nazv' => 'Замовник:',
             'schet' => 'Заявка:',
             'opl' => 'Призн.Опл.:',
             'adres1' => 'Адреса:',
+            'adres' => 'Адреса:',
             'adres_con' => 'Адреса підключення:',
             'type_doc' => 'Подача документів:',
             'comment' => 'Коментарій споживача:',
@@ -50,6 +51,7 @@ class Request extends \yii\db\ActiveRecord
             'status' => 'Статус заявки:',
             'contract' => '№ договору:',
             'date_contract' => 'Дата договору:',
+            'date_opl' => 'Дата оплати:',
             'message' => 'Повідомлення для споживача:',
             'doc1' => 'Заява про приєднання',
             'doc2' => "Технічні умови",
@@ -74,9 +76,9 @@ class Request extends \yii\db\ActiveRecord
             [['inn','schet','id','opl','date','adres1','adres','adres_con',
               'time','comment','date_z','status','message','new_inf',
                 'doc1','doc2','doc3','doc4','doc5','mark','date1','date2','date3','date4',
-                'date5','date6','date7',
+                'date5','date6','date7','year','nomer',
                 'contract','date_contract','type_doc','id_unique','id_tu','nazv','tel','edrpo','email','res','rem'], 'safe'],
-            [['tel','status','adres_con','nazv'],'required','message'=>'Поле обов’язкове'],
+            [['tel_con','status','adres_con','nazv'],'required','message'=>'Поле обов’язкове'],
             [['date'], 'default', 'value' => date('Y-m-d')],
             [['time'], 'default', 'value' => date('H:i')],
             [['doc1'],'file','skipOnEmpty' => true,'extensions'=>'pdf'],

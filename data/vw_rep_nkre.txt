@@ -1,0 +1,47 @@
+create view vw_rep_nkre as 
+SELECT 
+	a.id,
+	a.num,
+    a.rem,
+    a.fio,
+    a.num_pp,
+    a.adres,
+    a.loc,
+    a.n_doc,
+    a.date_doc,
+    a.src,
+    a.type_ust,
+    a.category,
+    a.power,
+    a.power_z,
+    a.voltage,
+    a.date_expl,
+    a.point_con,
+    a.scheme,
+    a.return_z,
+    a.date_dog,
+    a.date_tu,
+    a.num_tu,
+    a.distance,
+    a.date_con,
+    a.date_com_expl,
+    a.date_com_dog_d,
+    a.date_com_dog_p,
+    a.status,
+    case when a.status=1 then 'Змінено' else 'Не змінено' end as nazv_status,
+    b.nazv AS nazv_rem,
+    c.nazv AS nazv_locate,
+    d.nazv AS nazv_src,
+    e.nazv AS nazv_typeust,
+    i.nazv AS nazv_point_con,
+    j.nazv AS nazv_scheme,
+    k.nazv AS nazv_return_z
+   FROM (((((((rep_nkre a
+     LEFT JOIN spr_rem b ON ((a.rem = b.num)))
+     LEFT JOIN spr_loc c ON ((a.loc = c.num)))
+     LEFT JOIN spr_src d ON ((a.src = d.num)))
+     LEFT JOIN spr_type_ust e ON ((a.type_ust = e.num)))
+     LEFT JOIN spr_point_con i ON ((a.point_con = i.num)))
+     LEFT JOIN spr_scheme j ON ((a.scheme = j.num)))
+     LEFT JOIN spr_return_z k ON ((a.return_z = k.num)));
+     

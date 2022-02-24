@@ -7,8 +7,10 @@ use app\assets\AppAsset;
 use app\assets\AppAsset_eye;
 use yii\web\Request;
 use app\models\schet;
-use app\models\max_schet;
+use app\models\setprog;
+use app\models\info;
 use yii\helpers\Url;
+use yii\widgets\ActiveForm;
 
 /* @var $this \yii\web\View */
 /* @var $content string */
@@ -64,6 +66,7 @@ else {
     $flag_cek=0;
     $url = Url::base('');
     $adr='192.168.55.1';
+    $arr = ['2022', '2021'];
     $adr1='localhost';
     if(find_str($url,$adr)<>-1) $flag_cek=1;
     if(find_str($url,$adr1)<>-1) $flag_cek=1;
@@ -76,6 +79,11 @@ else {
     $role=Yii::$app->user->identity->role;
     $department=Yii::$app->user->identity->department;
 
+    }
+    if($role>0) {
+        $sql = "select * from setprog where active=1 and role=$role";
+        $set_p = setprog::findBySql($sql)->one();
+        $year_p = $set_p['year'];
     }
 
     $this->head() ?>
@@ -90,8 +98,17 @@ else {
 //        debug(Yii::$app->user->identity->role);
 //        debug($flag);
 
+        if($role>0)
+        NavBar::begin([
+                'brandLabel' => "Приєднання до електромереж [$year_p]",
+                'brandUrl' => Yii::$app->homeUrl,
+                'options' => [
+                    'class' => 'navbar-inverse navbar-fixed-top',
+                ],
+            ]);
+        else
             NavBar::begin([
-                'brandLabel' => 'Приєднання до електромереж',
+                'brandLabel' => "Приєднання до електромереж",
                 'brandUrl' => Yii::$app->homeUrl,
                 'options' => [
                     'class' => 'navbar-inverse navbar-fixed-top',
@@ -103,8 +120,15 @@ else {
             {echo Nav::widget([
                 'options' => ['class' => 'navbar-nav navbar-right'],
                 'items' => [
+                    ['label' => 'Рік', 'url' => ['/site/index'],
+                        'options' => ['id' => 'down_menu'],
+                        'items' => [
+                            ['label' => '2022', 'url' => ['/site/setprog?year=2022']],
+                            ['label' => '2021', 'url' => ['/site/setprog?year=2021']],
+
+                        ]],
                     ['label' => 'Вхід', 'url' => str_replace('/web','',Url::toRoute('site/cek')), 'linkOptions' => ['data-method' => 'post']],
-                    ['label' => 'Головна', 'url' => ['/site/createproposal']],
+//                    ['label' => 'Головна', 'url' => ['/site/createproposal']],
 
                     ['label' => 'Довідники', 'url' => ['/site/index'],
                         'options' => ['id' => 'down_menu'],			
@@ -117,8 +141,10 @@ else {
                         'items' => [
                             ['label' => 'Перегляд заявок', 'url' => ['/site/viewproposal']],
                             ['label' => 'Створення заявок', 'url' => ['/site/createproposal']],
-                            
+                            ['label' => 'Звіт для НКРЕ', 'url' => ['/site/report_nkre']],
+
                         ]],
+
                     ['label' => 'Розрахунок вартості', 'url' => ['/site/cnt_con']],
 //                    ['label' => 'Про программу', 'url' => ['/site/about']],
                     ['label' => 'Особистий кабінет', 'url' => ['/site/cabinet']],
@@ -130,6 +156,13 @@ else {
             {echo Nav::widget([
                 'options' => ['class' => 'navbar-nav navbar-right'],
                 'items' => [
+                    ['label' => 'Рік', 'url' => ['/site/index'],
+                        'options' => ['id' => 'down_menu'],
+                        'items' => [
+                            ['label' => '2022', 'url' => ['/site/setprog?year=1']],
+                            ['label' => '2021', 'url' => ['/site/setprog?year=2']],
+
+                        ]],
                     ['label' => 'Вхід', 'url' => str_replace('/web','',Url::toRoute('site/cek')), 'linkOptions' => ['data-method' => 'post']],
                     ['label' => 'Головна', 'url' => ['/site/index']],
                     ['label' => 'Адміністрування', 'url' => ['/site/index'],
@@ -138,6 +171,7 @@ else {
                             ['label' => 'Перегляд заявок', 'url' => ['/site/viewschet']],
                            
                         ]],
+
                     ['label' => 'Розрахунок вартості', 'url' => ['/site/cnt_con']],
 //                    ['label' => 'Про программу', 'url' => ['/site/about']],
                     ['label' => 'Особистий кабінет', 'url' => ['/site/cabinet']],
@@ -276,6 +310,7 @@ else {
                 'homeLink' => ['label' => 'Головна', 'url' => '/Connect'],
                 'links' => isset($this->params['breadcrumbs']) ? $this->params['breadcrumbs'] : [],
             ]) ?>
+
             <?= $content ?>
         </div>
     </div>

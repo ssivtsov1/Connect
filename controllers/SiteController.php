@@ -2,7 +2,15 @@
 
 namespace app\controllers;
 
+use app\models\rep_nkre;
+use app\models\report_nkre;
+use app\models\Spr_brig;
+use app\models\Spr_res;
 use app\models\Spr_res_koord;
+use app\models\Spr_uslug;
+use app\models\Spr_work;
+use app\models\Sprtransp;
+use app\models\Status_sch;
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -380,15 +388,19 @@ class SiteController extends Controller
             if($model->rem==4) $place_osr = '04';
 
              $n_osr = '31';  // Константа для ЦЭК
-            // Генерация ТУ
-            $tu = 'ТУ'.str_pad($model->id, 6, "0", STR_PAD_LEFT).$date_tu.$type_el.$n_osr.
-                                $place_osr.$type_c.$date_edit.$change_flag;
+
 
             $sql = 'select * from request where id='.$model->id;
+
 
             $info = request::findBySql($sql)->one();
 //            debug($info);
 //            return;
+            $id_new = $info['nomer'];
+//            $id_new = $info['id'];
+            // Генерация ТУ
+            $tu = 'ТУ'.str_pad($id_new, 6, "0", STR_PAD_LEFT).$date_tu.$type_el.$n_osr.
+                $place_osr.$type_c.$date_edit.$change_flag;
 
             $info->id_tu = $tu;
             if(!$info->save(false))
@@ -402,6 +414,40 @@ class SiteController extends Controller
             ]);
         }
     }
+
+    // Установки для программы
+    public function actionSetprog($year)
+    { // аргумент year - год, который выбирается в меню (Рік)
+      if(1==2) {  // Сейчас отключено
+          // Заполнение таблицы setprog
+          for ($role = 4; $role < 6; $role++) {
+              for ($year = 2021; $year < 2024; $year++) {
+                  if ($year == 2022) $active = 1; else $active = 0;  // Установка текущего года как активного
+                  $sql = "INSERT INTO setprog(year,active,role) select $year,$active,$role";
+                  Yii::$app->db->createCommand($sql)->execute();
+              }
+          }
+      }
+//      return;
+
+        if(!isset(Yii::$app->user->identity->role))
+        {      $flag=0;}
+        else{
+            $role=Yii::$app->user->identity->role;
+            $department=Yii::$app->user->identity->department;
+        }
+
+            $sql = "select * from setprog where year=$year and role=$role";
+            $set_p = request::findBySql($sql)->one();
+            $year_p = $set_p['year'];
+
+            // Делаем активным выбранный год в меню Рік
+            $sql = "UPDATE setprog set active=0 where role=$role";
+            Yii::$app->db->createCommand($sql)->execute();
+            $sql = "UPDATE setprog set active=1 where role=$role and year=$year_p";
+            Yii::$app->db->createCommand($sql)->execute();
+            return $this->goHome();
+        }
 
     //  Происходит при нажатии кнопки Створити ID повідомлення
     public function actionCreate_msg()
@@ -1086,10 +1132,10 @@ class SiteController extends Controller
         ]);
     }
 
-    // Создание заявок на подключение
-    public function actionCreateproposal($item='')
+    // Просмотр отчета НКРЕ
+    public function actionReport_nkre()
     {
-        $searchModel = new createproposal();
+        $searchModel = new Report_nkre();
 
         $flag=1;
         $role=0;
@@ -1099,61 +1145,104 @@ class SiteController extends Controller
             $role=Yii::$app->user->identity->role;
         }
 
+//        switch($role) {
+//            case 3: // Полный доступ
+//                $data = $searchModel::find()->orderBy(['status' => SORT_ASC])->all();
+//                break;
+//            case 2:  // финансовый отдел
+//                $data = $searchModel::find()->where('status=:status',[':status' => 2])->
+//                orderBy(['status' => SORT_ASC])->all();
+//                break;
+//            case 1:  // бухгалтерия
+//                $data = $searchModel::find()->where('status=:status',[':status' => 5])->
+//                orderBy(['status' => SORT_ASC])->all();
+//                break;
+//        }
+
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $dataProvider->pagination = false;
+
+        return $this->render('report_nkre', [
+            'model' => $searchModel,'dataProvider' => $dataProvider,'searchModel' => $searchModel,
+        ]);
+    }
+
+    // Создание заявок на подключение
+    public function actionCreateproposal($item='')
+    {
+        $searchModel = new createproposal();
+
+        $flag=1;
+        $role=0;
+        // Узнаем идентификатор пользователя
+        if(!isset(Yii::$app->user->identity->role))
+        {      $flag=0;}
+        else{
+            $role=Yii::$app->user->identity->role;  // идентификатор пользователя
+        }
+
+        $sql = "select * from setprog where active=1 and role=$role";
+        $set_p = request::findBySql($sql)->one();
+        $year_p = $set_p['year']; // год, который выбирается в меню (Рік)
+
         switch($role) {
             case 3: // Полный доступ
-                $data = $searchModel::find()->orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
+                $data = $searchModel::find()->where('year(date)=:year',[':year' => $year_p])
+                    ->orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
                 break;
             case 11:  // ДНРЕМ
                 $data = $searchModel::find()->where('role=:role',[':role' => 11])->
-                orwhere('rem=:rem',[':rem' => 1])->
+                orwhere('rem=:rem',[':rem' => 1])->andwhere('year(date)=:year',[':year' => $year_p])->
                 orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
                 break;
             case 12:  // ЖВРем
                 $data = $searchModel::find()->where('role=:role',[':role' => 12])->
-                orwhere('rem=:rem',[':rem' => 2])->
+                orwhere('rem=:rem',[':rem' => 2])->andwhere('year(date)=:year',[':year' => $year_p])->
                 orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
                 break;
             case 14:  // Павлоград
                 $data = $searchModel::find()->where('role=:role',[':role' => 14])->
-                orwhere('rem=:rem',[':rem' => 4])->
+                orwhere('rem=:rem',[':rem' => 4])->andwhere('year(date)=:year',[':year' => $year_p])->
                 orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
                 break;
             case 13:  // Вг
                 $data = $searchModel::find()->where('role=:role',[':role' => 13])->
-                orwhere('rem=:rem',[':rem' => 2])->
+                orwhere('rem=:rem',[':rem' => 2])->andwhere('year(date)=:year',[':year' => $year_p])->
                 orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
                 break;
             case 15:  // Крг Рем
                 $data = $searchModel::find()->where('role=:role',[':role' => 15])->
-                orwhere('rem=:rem',[':rem' => 3])->
+                orwhere('rem=:rem',[':rem' => 3])->andwhere('year(date)=:year',[':year' => $year_p])->
                 orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
                 break;
             case 16:  // Ап
                 $data = $searchModel::find()->where('role=:role',[':role' => 16])->
-                orwhere('rem=:rem',[':rem' => 3])->
+                orwhere('rem=:rem',[':rem' => 3])->andwhere('year(date)=:year',[':year' => $year_p])->
                 orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
                 break;
             case 17:  // Гвардійске
                 $data = $searchModel::find()->where('role=:role',[':role' => 17])->
-                orwhere('rem=:rem',[':rem' => 4])->
+                orwhere('rem=:rem',[':rem' => 4])->andwhere('year(date)=:year',[':year' => $year_p])->
                 orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
                 break;
             case 18:  // Інгулець
                 $data = $searchModel::find()->where('role=:role',[':role' => 18])->
-                orwhere('rem=:rem',[':rem' => 3])->
+                orwhere('rem=:rem',[':rem' => 3])->andwhere('year(date)=:year',[':year' => $year_p])->
                 orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
                 break;
             case 4:
                 // Полный доступ
-                $data = $searchModel::find()->orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
+                $data = $searchModel::find()->where('year(date)=:year',[':year' => $year_p])->
+                orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
                 break;
             case 5:
                 // Полный доступ
-                $data = $searchModel::find()->orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
+                $data = $searchModel::find()->where('year(date)=:year',[':year' => $year_p])->
+                orderBy(['date' => SORT_DESC,'time'=>SORT_DESC])->all();
                 break;
         }
 
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams,$role);
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams,$role,$year_p);
         $dataProvider->pagination = false;
 
         if (Yii::$app->request->get('item') == 'Excel' )
@@ -1469,6 +1558,7 @@ class SiteController extends Controller
         $nazv = $model->schet;
         $inn = $model->inn;
         $mail = $model->email;
+        $edrpo = $model->edrpo;
 
         $message_old=$model->message;
         $contract_old=$model->contract;
@@ -1554,12 +1644,15 @@ class SiteController extends Controller
                 $model1->date7 = date("Y-m-d", strtotime($model->date7));
             if(!empty($model->date_opl))
                 $model1->date_opl = date("Y-m-d", strtotime($model->date_opl));
+            else
+                $model1->date_opl = '';
             if(!empty($model->date_exec))
                 $model1->date_exec = date("Y-m-d", strtotime($model->date_exec));
             $model1->comment = $model->comment;
             $model1->contract = $model->contract;
             $model1->date_contract = $model->date_contract;
             $model1->adres = $model->adres_con;
+            $model1->tel_con = $model->tel_con;
             $model1->opl = $model->opl;
             $model1->mark = $model->mark;
             $model1->message = $message;
@@ -1567,19 +1660,51 @@ class SiteController extends Controller
             $model1->id_tu = $model->id_tu;
 
             // Сохранение клиентских данных
-            $client = client::find()->where('id=:id',[':id'=>$model1->id_client])
-               ->one();
+            if(empty($model->new_cl)) {
+                $client = client::find()->where('id=:id',[':id'=>$model1->id_client])
+                   ->one();
+                if(!empty($model->inn)) {
+                    $sql = "select * from client where trim(inn)=$inn";
+                }
+                if(!empty($model->edrpo)) {
+                    $sql = "select * from client where trim(edrpo)=$edrpo";
+                }
+             }
+            else {
+                $client = new client();
+                if(!empty($model->inn)) {
+                    $sql = "select max(id) as id from client where trim(inn)=$inn";
+                }
+                if(!empty($model->edrpo)) {
+                    $sql = "select max(id) as id from client where trim(edrpo)=$edrpo";
+                }
+            }
             $client->inn=$model->inn;
             $client->edrpo=$model->edrpo;
             $client->name=$model->nazv;
             $client->adres=$model->adres;
-            $client->tel=$model->tel;
+            $client->tel=$model->tel_con;
             $client->e_mail=$model->email;
+
+            if(empty($model->inn) && empty($model->edrpo)) {
+                $model = new info();
+                $model->title = 'Створення скасовано';
+                $model->info1 = "потрібно ввести ІПН або ЄДРПОУ.";
+                $model->style1 = "d15";
+                $model->style2 = "info-text";
+                $model->style_title = "d9";
+
+                return $this->render('msg', [
+                    'model' => $model]);
+            }
+
             if(!$client->save(false))
             {
                 var_dump($client);
                 return;
             }
+            $client = client::findBySql($sql)->one();
+            $model1->id_client = $client->id;
 
             if(!$model1->save(false))
             {
@@ -1748,8 +1873,23 @@ class SiteController extends Controller
 //            $model1 = new request();
 //            debug($model);
 //            return;
+            $z = "select max(nomer) as nomer
+                      from request
+                      where year(date)=year(now())";
+
+            $req = request::findBySql($z)->one();
+//            debug($req);
+//            return;
+
+            // В Новом году нумерация начинается сначала (с 1)
+            if(empty($req['nomer']))
+                $nomer=1;
+            else
+                $nomer=$req['nomer']+1;
+
             $model->date = date("Y-m-d");
             $model->time = date("H:i:s");
+            $model->nomer = $nomer;
             if(!empty($model->date_opl))
                 $model->date_opl = date("Y-m-d", strtotime($model->date_opl));
             if(!empty($model->date_exec))
@@ -1759,24 +1899,23 @@ class SiteController extends Controller
             $model->comment = $model->comment;
             $model->contract = $model->contract;
             $model->date_contract = $model->date_contract;
+            $adres_cl = $model->adres;
             $model->adres = $model->adres_con;
             $model->user = $role;
             $inn = $model->inn;
             $edrpo = $model->edrpo;
             $nazv = $model->nazv;
             $adres = $model->adres1;
-            $tel = $model->tel;
+            $tel = $model->tel_con;
             $email = $model->email;
 //            debug($adres);
 //            return;
             // Сохранение клиентских данных
             if(!empty($model->inn)) {
-                $sql = "select * from client where trim(inn)=$inn";
-
+                $sql = "select max(id) as id from client where trim(inn)=$inn";
             }
             if(!empty($model->edrpo)) {
-                $sql = "select * from client where trim(edrpo)=$edrpo";
-
+                $sql = "select max(id) as id from client where trim(edrpo)=$edrpo";
             }
             if(empty($model->inn) && empty($model->edrpo)) {
                 $model = new info();
@@ -1798,8 +1937,8 @@ class SiteController extends Controller
             $client->inn=$model->inn;
             $client->edrpo=$model->edrpo;
             $client->name=$model->nazv;
-            $client->adres=$model->adres;
-            $client->tel=$model->tel;
+            $client->adres=$adres_cl;
+            $client->tel=$model->tel_con;
             $client->e_mail=$model->email;
 
             if(!$client->save(false))
@@ -1834,7 +1973,9 @@ class SiteController extends Controller
        }
         if (Yii::$app->request->isAjax) {
             $iklient = client::find()->
-                where('trim(inn)=:inn',[':inn' => trim($inn)])->all();
+                where('trim(inn)=:inn',[':inn' => trim($inn)])->orderBy([
+                'id' => SORT_DESC //specify sort order ASC for ascending DESC for descending
+            ])->all();
             //var_dump($iklient);
             if(!isset($iklient[0]->name)) {
                 $nazv = '';
@@ -1886,7 +2027,124 @@ class SiteController extends Controller
         }
         return ['oh no' => 'you are not allowed :('];
     }
-       
+
+    //    Обновление записей из справочника
+    public function actionUpdate_repnkre($id,$mod)
+    {
+        // $id  id записи
+        // $mod - название модели
+        if($mod=='update_repnkre')
+            $model = Rep_nkre::findOne($id);
+
+        if ($model->load(Yii::$app->request->post()))
+        {
+            $model->status=1;
+            $date_con=$model->date_con;
+            if(substr($date_con,2,1)<>'.'){
+                if(!empty($date_con)) {
+                    $date_con = changeDateFormat($date_con, 'd.m.Y');
+                    $model->date_con = $date_con;
+                }
+            }
+            $date_com_dog_d=$model->date_com_dog_d;
+            if(substr($date_com_dog_d,2,1)<>'.'){
+                if(!empty($date_com_dog_d)) {
+                    $date_com_dog_d = changeDateFormat($date_com_dog_d, 'd.m.Y');
+                    $model->date_com_dog_d = $date_com_dog_d;
+                }
+            }
+            $date_com_dog_p=$model->date_com_dog_p;
+            if(substr($date_com_dog_p,2,1)<>'.'){
+                if(!empty($date_com_dog_p)) {
+                    $date_com_dog_p = changeDateFormat($date_com_dog_p, 'd.m.Y');
+                    $model->date_com_dog_p = $date_com_dog_p;
+                }
+            }
+            if(!$model->save())
+            {  $model->validate();
+                print_r($model->getErrors());
+                return;
+                var_dump($model);return;
+            }
+
+            if($mod=='update_repnkre')
+                return $this->redirect(['site/report_nkre']);
+
+        }
+        else
+        {
+            if($mod=='update_repnkre')
+                return $this->render('update_nkre', [
+                    'model' => $model,
+                ]);
+        }
+    }
+
+    //    Импорт данных отчета для НКРЕ
+    public function actionImport_rep_nkre()
+    {
+        define("FIRST_STRING", 10);  // Константа начала вывода строк в таблице - конец шапки таблицы Excel
+        $data = Rep_nkre::find()->where(['status'=>1])->asArray()->all();  // Массив измененных записей в отчете
+        $sql='select max(num_pp) as maxnum from rep_nkre';
+        $data_max = Rep_nkre::findBySql($sql)->asArray()->all();
+        $max_string=$data_max[0]['maxnum'];  // Кол-во строк в отчете
+
+        $kol=count($data);
+        // Если нет данных для импорта - выводим сообщение: "Даних для імпорту немає"
+        if($kol==0){
+            $model = new info();
+            $model->title = 'Увага!';
+            $model->info1 = "Даних для імпорту немає";
+            $model->style1 = "d15";
+            $model->style2 = "info-text";
+            $model->style_title = "d9";
+
+            return $this->render('about_u', [
+                'model' => $model]);
+        }
+
+        $pExcel = \PHPExcel_IOFactory::load('rep_nkre.xlsx');
+        $objWriter = \PHPExcel_IOFactory::createWriter($pExcel, 'Excel2007');
+        // Очищаем первую ячейку (надпись "Змінено") - по всем строкам отчета
+        for($i=(FIRST_STRING+1);$i<($max_string+FIRST_STRING+1);$i++) {
+            $pExcel->getActiveSheet()->setCellValue('A'.$i,'');
+        }
+        // Заполняем определенные ячейки
+        foreach ($data as $v) {
+            $num_pp=$v['num_pp'];
+            $row=FIRST_STRING+$num_pp;
+            $date_con=$v['date_con'];
+            $distance=$v['distance'];
+            $date_com_expl=$v['date_com_expl'];
+            $date_com_dog_d=$v['date_com_dog_d'];
+            $date_com_dog_p=$v['date_com_dog_p'];
+            $pExcel->getActiveSheet()->setCellValue('X'.$row,$distance);
+            $pExcel->getActiveSheet()->setCellValue('BL'.$row,$date_con);
+            $pExcel->getActiveSheet()->setCellValue('DT'.$row,$date_com_expl);
+            $pExcel->getActiveSheet()->setCellValue('DU'.$row,$date_com_dog_d);
+            $pExcel->getActiveSheet()->setCellValue('DV'.$row,$date_com_dog_p);
+//            $pExcel->getActiveSheet()->getStyle('B11')
+//                ->getFill()->getStartColor()->setRGB('FFFF0000');
+            $pExcel->getActiveSheet()->setCellValue('A'.$row,'Змінено');
+            $objWriter->save('rep_nkre.xlsx');
+        }
+        // Обнуляем все статусы, так как все строки уже импортированы
+        $z='UPDATE rep_nkre set status=0';
+        Yii::$app->db_pg_budget->createCommand($z)->execute();
+
+//        Выводим информационное сообщение о том сколько импортировано строк в таблицу Excel
+        $model = new info();
+        $model->title = 'Увага!';
+        $model->info1 = "Дані записано. Кількість змінених рядків ".$kol;
+        $model->style1 = "d15";
+        $model->style2 = "info-text";
+        $model->style_title = "d9";
+
+        return $this->render('about_u', [
+            'model' => $model]);
+    }
+
+
 // Добавление новых пользователей
     public function actionAddAdmin() {
         $model = User::find()->where(['username' => 'boss'])->one();

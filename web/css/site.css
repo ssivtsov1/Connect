@@ -1364,3 +1364,6 @@ div.scrolldown {
 div.scrolldown:hover {
     background-color: #000; /* цвет заднего фона при наведении */
 }
+.site-spr{
+    margin-left: -160px;
+}

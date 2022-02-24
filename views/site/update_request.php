@@ -421,6 +421,10 @@ window.addEventListener('load', function(){
             '1' => 'Оплачено']); ?>
         <?php endif; ?>
 
+        <?= $form->field($model, 'date_opl')->widget(\yii\jui\DatePicker::classname(), [
+            'language' => 'uk',
+        ]) ?>
+
         <?= $form->field($model, 'rem')->label('Дільниця')  -> dropDownList ( $arr3 ) ?>
 
 <!--        --><?//=$form->field($model, 'new_doc')->
@@ -566,7 +570,7 @@ window.addEventListener('load', function(){
                 ['onblur' => '$.get("' . Url::to('/Connect/web/site/getklient?inn=') .
                     '"+$(this).val(),
                     function(data) {
-//                     alert(data.nazv); 
+//                     alert(data.tel); 
                     if(localStorage.getItem("person")==0) {
                     if(data.nazv=="")
                     { //alert(11);  
@@ -576,8 +580,8 @@ window.addEventListener('load', function(){
                       $("#request-nazv").text("");
                       $("#createproposal-adres").text("");
                       $("#request-adres").text("");
-                      $("#createproposal-tel").val("");
-                      $("#request-tel").text("");
+                      $("#createproposal-tel_con").val("");
+                      $("#request-tel_con").text("");
                       $("#createproposal-email").val("");
                       $("#request-email").text("");
                       $("#createproposal-edrpo").val("");
@@ -591,8 +595,8 @@ window.addEventListener('load', function(){
                       $("#createproposal-adres").text(data.adres);
                        $("#createproposal-adres1").text(data.adres);
                        $("#request-adres1").text(data.adres);
-                      $("#createproposal-tel").val(data.tel);
-                       $("#request-tel").val(data.tel);
+                      $("#createproposal-tel_con").val(data.tel);
+                       $("#request-tel_con").val(data.tel);
                       $("#createproposal-edrpo").val(data.edrpo);
                         $("#request-edrpo").val(data.edrpo);
                       $("#createproposal-email").val(data.email);
@@ -603,18 +607,28 @@ window.addEventListener('load', function(){
                     ]) ?>
         <?endif;?>
 
+        <?php if($mode==1): ?>
+            <?= $form->field($model, 'new_cl')
+            ->checkbox([
+            'labelOptions' => [
+            'style' => 'padding-left:20px;'
+            ],
+            'disabled' => false
+            ]);  ?>
+        <?php endif; ?>
+
     <?= $form->field($model, 'nazv')->textarea() ?>
 
 <!--    --><?//= $form->field($model, 'tel',
 //            ['inputTemplate' => '<div class="input-group"><span class="input-group-addon">'
 //            . '<span class="glyphicon glyphicon-phone"></span></span>{input}</div>'] )->textInput() ?>
 
-        <?= $form->field($model, 'tel',['inputTemplate' => '<div class="input-group"><span class="input-group-addon">'
+        <?= $form->field($model, 'tel_con',['inputTemplate' => '<div class="input-group"><span class="input-group-addon">'
             . '<span class="glyphicon glyphicon-phone"></span></span>{input}</div>'])->textInput(
             ['maxlength' => true,'onBlur' => 'norm_tel($(this).val())']) ?>
         
      <?php if($mode==0):?>
-         <?= $form->field($model, 'adres1')->textarea() ?>
+         <?= $form->field($model, 'adres')->textarea() ?>
      <?php endif; ?>
         <?php if($mode==1):?>
             <?= $form->field($model, 'adres')->textarea() ?>

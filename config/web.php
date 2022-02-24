@@ -74,6 +74,7 @@ $config = [
         'db' => require(__DIR__ . '/db.php'),
         'db_g' => require(__DIR__ . '/db_g.php'),
         'db_gis' => require(__DIR__ . '/db_gis.php'),
+        'db_pg_budget' => require(__DIR__ . '/db_pg_budget.php'),
         'formatter' => [
             'class' => 'yii\i18n\Formatter',
             'nullDisplay' => '',

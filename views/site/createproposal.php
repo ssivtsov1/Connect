@@ -55,18 +55,18 @@ $this->title = 'Створення замовлень на підключенн�
             'template' => '{update}',
         ],
 
-            ['attribute' =>'id',
+            ['attribute' =>'nomer',
                 'value' => function ($model){
                     $q = $model->status;
                     switch($q){
                         case 1:
-                            return  $model->id ;
+                            return  $model->nomer ;
 
                         case 11:
-                            return "<span class='text-success fontbld'> $model->id </span>";
+                            return "<span class='text-success fontbld'> $model->nomer </span>";
 
                         default:
-                            return $model->id;}
+                            return $model->nomer;}
                 },
                 'format' => 'raw'
             ],
@@ -138,18 +138,18 @@ $this->title = 'Створення замовлень на підключенн�
                 'format' => 'raw'
             ],
 
-            ['attribute' =>'tel',
+            ['attribute' =>'tel_con',
                 'value' => function ($model){
                     $q = $model->status;
                     switch($q){
                         case 1:
-                            return  $model->tel ;
+                            return  $model->tel_con ;
                        
                         case 11:
-                            return "<span class='text-success fontbld'> $model->tel </span>";
+                            return "<span class='text-success fontbld'> $model->tel_con </span>";
                         
                         default:
-                            return $model->tel;}
+                            return $model->tel_con;}
                 },
                 'format' => 'raw'
             ],

@@ -23,6 +23,7 @@ class Createproposal extends \yii\db\ActiveRecord
     public $doc3;
     public $doc4;
     public $doc5;
+    public $new_cl; // Признак создания нового пользователя электроенергией в справочнике
 
     public static function tableName()
     {
@@ -36,6 +37,7 @@ class Createproposal extends \yii\db\ActiveRecord
             'inn' => 'ІНН:',
             'schet' => 'Заявка:',
             'opl' => 'Оплата:',
+            'date_opl' => 'Дата оплати:',
             'edrpo' => 'ЄДРПОУ:',
             'regsvid' => '№ рег. посвідч.',
             'nazv' => 'Замовник:',
@@ -44,7 +46,7 @@ class Createproposal extends \yii\db\ActiveRecord
             'adres_con' => 'Адреса виконання робіт:',
             'res' => 'Територіальний підрозділ:',
             'comment' => 'Коментар споживача:',
-            'tel' => 'Телефон:',
+            'tel_con' => 'Телефон:',
             'date' => 'Дата заявки:',
             'date_f' => 'Дата заявки:',
             'email' => 'Адреса ел. почти:',
@@ -57,7 +59,9 @@ class Createproposal extends \yii\db\ActiveRecord
             'new_doc' => 'Признак документів:',
             'message' => 'Повідомлення для споживача:',
             'id_tu' => 'Ідентифікатор ТУ:',
+            'nomer' => '№ з.п.',
             'id_msg' => 'Ідентифікатор повідомлення:',
+            'new_cl' => 'Новий користувач електроенергією',
             'doc1' => 'Заява про приєднання',
             'doc2' => "Технічні умови",
             'doc3' => 'Розрахунок вартості плати на приєднання',
@@ -78,10 +82,10 @@ class Createproposal extends \yii\db\ActiveRecord
     {
         return [
             [['id','inn','schet','opl','date','adres1','id_tu',
-                'okpo','nazv','adres_con','tel','id_unique','view',
+                'okpo','nazv','adres_con','tel_con','id_unique','view',
                 'doc1','doc2','doc3','doc4','doc5','mark','date1','date2','date3','date4',
-                'date5','date6','date7','res','rem',
-                'email','adres','status','nazv_status','new_inf','message',
+                'date5','date6','date7','res','rem','nomer',
+                'email','adres','status','nazv_status','new_inf','message','new_cl',
                 'comment','time','date_z','date_opl','contract','date_contract'], 'safe'],
             ['date_z','date', 'format' => 'Y-m-d'],
 //            [['tel','status','adres_con','nazv'],'required','message'=>'Поле обов’язкове'],
@@ -93,50 +97,54 @@ class Createproposal extends \yii\db\ActiveRecord
         ];
     }
 
-    public function search($params,$role)
+    public function search($params,$role,$year_p)
     {
+        /*
+         * role - № отдела (как-бы идентификатор пользователя)
+         * year_p - год, который выбирается в меню (Рік)
+         */
         switch($role) {
             case 3: // Полный доступ
-                $query = createproposal::find();
+                $query = createproposal::find()->where('year(date)=:year',[':year' => $year_p]);
                 break;
             case 4: // Полный доступ
-                $query = createproposal::find();
+                $query = createproposal::find()->where('year(date)=:year',[':year' => $year_p]);
                 break;
             case 5: // Полный доступ
-                $query = createproposal::find();
+                $query = createproposal::find()->where('year(date)=:year',[':year' => $year_p]);
                 break;
             case 11: // Dnepr
                 $query = createproposal::find()->
                 where('department=:department',[':department' => 'Дніпропетровські РЕМ'])->
-                orwhere('rem=:rem',[':rem' => 1]);
+                orwhere('rem=:rem',[':rem' => 1])->andwhere('year(date)=:year',[':year' => $year_p]);
                 break;
             case 12: // zvdrem
                 $query = createproposal::find()->where('department=:department',[':department' => 'Жовтоводські РЕМ'])->
-                 orwhere('rem=:rem',[':rem' => 2]);
+                 orwhere('rem=:rem',[':rem' => 2])->andwhere('year(date)=:year',[':year' => $year_p]);
                 break;
             case 13: // vgrem
                 $query = createproposal::find()->where('department=:department',[':department' => 'Вільногірські РЕМ'])->
-                orwhere('rem=:rem',[':rem' => 2]);
+                orwhere('rem=:rem',[':rem' => 2])->andwhere('year(date)=:year',[':year' => $year_p]);
                 break;
             case 14: // pvrem
                 $query = createproposal::find()->where('department=:department',[':department' => 'Павлоградські РЕМ'])->
-                orwhere('rem=:rem',[':rem' => 4]);
+                orwhere('rem=:rem',[':rem' => 4])->andwhere('year(date)=:year',[':year' => $year_p]);
                 break;
             case 15: // krgrem
                 $query = createproposal::find()->where('department=:department',[':department' => 'Криворізькі РЕМ'])->
-                orwhere('rem=:rem',[':rem' => 3]);
+                orwhere('rem=:rem',[':rem' => 3])->andwhere('year(date)=:year',[':year' => $year_p]);
                 break;
             case 16: // aprem
                 $query = createproposal::find()->where('department=:department',[':department' => 'Дільниця Апостоловська'])
-                    ->orwhere('rem=:rem',[':rem' => 3]);
+                    ->orwhere('rem=:rem',[':rem' => 3])->andwhere('year(date)=:year',[':year' => $year_p]);
                 break;
             case 17: // gvrem
                 $query = createproposal::find()->where('department=:department',[':department' => 'Дільниця Гвардійська'])
-                    ->orwhere('rem=:rem',[':rem' => 4]);
+                    ->orwhere('rem=:rem',[':rem' => 4])->andwhere('year(date)=:year',[':year' => $year_p]);
                 break;
             case 18: // inrem
                 $query = createproposal::find()->where('department=:department',[':department' => 'Дільниця Інгулецька'])
-                    ->orwhere('rem=:rem',[':rem' => 3]);
+                    ->orwhere('rem=:rem',[':rem' => 3])->andwhere('year(date)=:year',[':year' => $year_p]);
                 break;
 
         }
@@ -152,8 +160,9 @@ class Createproposal extends \yii\db\ActiveRecord
         $query->andFilterWhere(['like', 'adres_con', $this->adres_con]);
         $query->andFilterWhere(['like', 'inn', $this->inn]);
         $query->andFilterWhere(['like', 'nazv', $this->nazv]);
-        $query->andFilterWhere(['like', 'tel', $this->tel]);
+        $query->andFilterWhere(['like', 'tel_con', $this->tel]);
         $query->andFilterWhere(['like', 'id_tu', $this->id_tu]);
+        $query->andFilterWhere(['=', 'nomer', $this->nomer]);
         
         return $dataProvider;
     }
